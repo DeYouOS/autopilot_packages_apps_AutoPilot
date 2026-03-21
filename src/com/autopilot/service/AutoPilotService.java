@@ -214,7 +214,11 @@ public class AutoPilotService extends Service {
             // persist.sys.locale 由系统属性 ro.product.locale 在首次启动时写入
             LocaleList.setDefault(new LocaleList(Locale.SIMPLIFIED_CHINESE));
 
-            Log.i(TAG, "车载本地化配置完成: 24小时制, 简体中文");
+            // 强制开启 ADB 调试（跳过向导后开发者选项中的 USB 调试默认关闭）
+            Settings.Global.putInt(getContentResolver(),
+                    Settings.Global.ADB_ENABLED, 1);
+
+            Log.i(TAG, "车载本地化配置完成: 24小时制, 简体中文, ADB已启用");
         } catch (Exception e) {
             Log.e(TAG, "本地化配置失败: " + e.getMessage(), e);
         }
