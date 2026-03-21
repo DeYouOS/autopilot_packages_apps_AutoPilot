@@ -24,10 +24,78 @@ android_app {
     system_ext_specific: true,
     privileged: true,
 
-    // 替换 LineageOS 开机向导和 AOSP Provision
-    // 车载场景无需向导：语言/时区由系统属性预设，AutoPilot 内置 ProvisionActivity
-    // 负责静默设置 device_provisioned=1 + user_setup_complete=1，开机直进桌面
-    overrides: ["LineageSetupWizard", "Provision"],
+    // 替换开机向导 + 车载场景不需要的应用
+    // overrides 机制：构建系统遇到 overrides 中的模块名时，不安装该模块，改为安装 AutoPilot
+    // 保留：Dialer（电话）、messaging（短信）、Contacts（联系人）、Camera2/Aperture（相机）、
+    //       Settings、Launcher3QuickStep、SystemUI、蓝牙/WiFi/GPS 相关
+    overrides: [
+        // 开机向导（AutoPilot 内置 ProvisionActivity 替代）
+        "LineageSetupWizard",
+        "Provision",
+
+        // 浏览器
+        "Browser2",
+        "Jelly",
+
+        // 日历
+        "Etar",
+
+        // 计算器
+        "ExactCalculator",
+
+        // 时钟/闹钟
+        "DeskClock",
+
+        // 音乐播放器（保留音频 HAL，仅删 UI 应用）
+        "Music",
+        "Twelve",
+
+        // 邮件
+        "Camelot",
+
+        // 录音机
+        "Recorder",
+
+        // 相册/图库（保留相机 app，仅删图库浏览器）
+        "Gallery2",
+        "Glimpse",
+
+        // 文件管理器
+        "DocumentsUI",
+
+        // 壁纸/主题
+        "WallpaperPicker2",
+        "ThemePicker",
+        "Backgrounds",
+
+        // 音效均衡器
+        "AudioFX",
+        "MusicFX",
+
+        // 头像选择器
+        "AvatarPicker",
+
+        // 备份
+        "Seedvault",
+
+        // 系统更新器（车载不需要 OTA）
+        "Updater",
+
+        // FM 收音机
+        "FMRadio",
+
+        // 彩蛋
+        "EasterEgg",
+
+        // 打印服务
+        "BuiltInPrintService",
+        "PrintSpooler",
+        "PrintRecommendationService",
+
+        // 其他非必要
+        "QuickSearchBox",
+        "BookmarkProvider",
+    ],
 
     // 特权应用白名单文件
     privapp_allowlist: "com.autopilot.xml",
