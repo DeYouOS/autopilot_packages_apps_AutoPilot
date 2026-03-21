@@ -27,9 +27,11 @@ import android.app.NotificationManager;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.TetheringManager;
 import android.net.wifi.SoftApConfiguration;
 import android.net.wifi.WifiManager;
+import android.os.Build;
 import android.os.BatteryManager;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -77,6 +79,20 @@ public class AutoPilotService extends Service {
 
     // ping 目标地址（阿里 DNS，国内延迟低）
     private static final String PING_TARGET = "223.5.5.5";
+
+    // ============ 热点伪装参数（名爵6 车机 WiFi 风格） ============
+
+    // 热点 SSID 前缀：模拟名爵6 斑马系统车载 WiFi 命名格式 "MG-xxxxx"
+    private static final String HOTSPOT_SSID_PREFIX = "MG-LINK-";
+
+    // 热点默认密码（WPA2-PSK，8 位以上）
+    private static final String HOTSPOT_DEFAULT_PASSWORD = "mg6-12345";
+
+    // SharedPreferences 文件名，记录热点是否已完成首次配置
+    private static final String PREFS_NAME = "autopilot_prefs";
+
+    // 标记热点 SSID/密码是否已在首次启动时设置过（避免覆盖用户后续手动修改）
+    private static final String PREF_HOTSPOT_CONFIGURED = "hotspot_configured";
 
     // ============ 服务状态 ============
 
@@ -236,7 +252,8 @@ public class AutoPilotService extends Service {
      * 启动 WiFi 热点
      *
      * 使用 TetheringManager.startTethering() 以特权方式启动 WiFi 热点。
-     * 热点参数（SSID/密码/频段）使用系统当前配置，不强制覆盖。
+     * 首次启动时自动设置 SSID 为名爵6 车机 WiFi 风格（MG-LINK-xxxx），
+     * 密码设为默认值，安全类型 WPA2-PSK。后续启动不再覆盖，允许用户手动修改。
      * 同时禁用热点自动关闭（setAutoShutdownEnabled=false），
      * 确保车载场景下即使无客户端连接也保持热点常开。
      */
@@ -250,16 +267,21 @@ public class AutoPilotService extends Service {
                 Log.i(TAG, "WiFi 已开启");
             }
 
-            // 获取当前热点配置，禁用自动关闭
+            // 获取当前热点配置
             SoftApConfiguration currentConfig = mWifiManager.getSoftApConfiguration();
             if (currentConfig != null) {
                 SoftApConfiguration.Builder builder =
                         new SoftApConfiguration.Builder(currentConfig);
                 // 禁用无客户端时自动关闭热点
                 builder.setAutoShutdownEnabled(false);
+
+                // 首次启动：设置伪装名爵6车机的 SSID 和默认密码
+                // 仅在首次配置时执行，避免覆盖用户后续手动修改
+                configureHotspotIdentity(builder);
+
                 mWifiManager.setSoftApConfiguration(builder.build());
-                Log.i(TAG, "热点配置已更新：自动关闭已禁用，SSID="
-                        + currentConfig.getWifiSsid());
+                Log.i(TAG, "热点配置已更新：SSID="
+                        + builder.build().getWifiSsid());
             }
 
             // 使用 TetheringManager 启动 WiFi 热点
@@ -290,6 +312,42 @@ public class AutoPilotService extends Service {
             // 异常时延迟重试
             mWorkerHandler.postDelayed(this::startHotspot, 10_000);
         }
+    }
+
+    /*
+     * 配置热点身份信息（SSID + 密码）
+     *
+     * 首次启动时，将热点 SSID 设为名爵6 车机风格的 "MG-LINK-xxxx"
+     * （xxxx 取自设备序列号末4位，模拟真实车机的唯一标识），
+     * 密码设为默认值，安全类型 WPA2-PSK。
+     *
+     * 通过 SharedPreferences 记录是否已配置，后续启动不再覆盖，
+     * 允许用户通过系统设置手动修改热点名称和密码。
+     *
+     * @param builder 当前热点配置的 Builder，调用方负责 build() 和 apply
+     */
+    private void configureHotspotIdentity(SoftApConfiguration.Builder builder) {
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        if (prefs.getBoolean(PREF_HOTSPOT_CONFIGURED, false)) {
+            return;
+        }
+
+        // 生成 SSID：取设备序列号末4位作为后缀，不足4位则补零
+        String serial = Build.getSerial();
+        if (serial == null || serial.equals(Build.UNKNOWN) || serial.length() < 4) {
+            serial = String.valueOf(System.currentTimeMillis() % 10000);
+        }
+        String suffix = serial.substring(serial.length() - 4);
+        String ssid = HOTSPOT_SSID_PREFIX + suffix;
+
+        // 设置 SSID 和 WPA2-PSK 密码
+        builder.setSsid(ssid);
+        builder.setPassphrase(HOTSPOT_DEFAULT_PASSWORD,
+                SoftApConfiguration.SECURITY_TYPE_WPA2_PSK);
+
+        // 标记已配置，后续启动不再覆盖
+        prefs.edit().putBoolean(PREF_HOTSPOT_CONFIGURED, true).apply();
+        Log.i(TAG, "热点身份已配置：SSID=" + ssid + ", 安全类型=WPA2-PSK");
     }
 
     // ============ 双卡信号监听 ============
