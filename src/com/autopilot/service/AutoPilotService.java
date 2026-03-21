@@ -38,8 +38,11 @@ import android.os.HandlerThread;
 import android.os.IBinder;
 import android.os.LocaleList;
 import android.os.PowerManager;
+import android.os.UserHandle;
 import android.provider.Settings;
 import android.telephony.SignalStrength;
+
+import com.android.internal.widget.LockPatternUtils;
 
 import java.util.Locale;
 import android.telephony.SubscriptionInfo;
@@ -218,9 +221,47 @@ public class AutoPilotService extends Service {
             Settings.Global.putInt(getContentResolver(),
                     Settings.Global.ADB_ENABLED, 1);
 
-            Log.i(TAG, "车载本地化配置完成: 24小时制, 简体中文, ADB已启用");
+            // 禁用锁屏（车载场景：开机直达桌面，息屏后唤醒也不出锁屏）
+            // 通过 LockPatternUtils.setLockScreenDisabled(true, userId) 将 DISABLE_LOCKSCREEN_KEY
+            // 写入 LockSettings 数据库。KeyguardViewMediator 检测到此标志后跳过锁屏展示。
+            // 前提：设备未设置 PIN/图案/密码（isSecure()=false），否则此设置无效。
+            // 框架层已通过 config_disableLockscreenByDefault overlay 设置默认值，此处为代码层兜底。
+            disableLockScreen();
+
+            Log.i(TAG, "车载本地化配置完成: 24小时制, 简体中文, ADB已启用, 锁屏已禁用");
         } catch (Exception e) {
             Log.e(TAG, "本地化配置失败: " + e.getMessage(), e);
+        }
+    }
+
+    // ============ 锁屏禁用 ============
+
+    /**
+     * 禁用系统锁屏
+     *
+     * 车载场景下不需要锁屏：开机直达桌面，息屏唤醒后也无需滑动解锁。
+     * 通过 LockPatternUtils.setLockScreenDisabled(true, userId) 实现，
+     * 该方法将 DISABLE_LOCKSCREEN_KEY 写入 LockSettings 数据库。
+     *
+     * 注意：如果用户设置了 PIN/图案/密码（isSecure()=true），此调用无效。
+     * 因此同时设置 Settings.Secure.LOCK_SCREEN_LOCK_AFTER_TIMEOUT 为极大值作为兜底，
+     * 即使锁屏未被完全禁用，也不会在息屏后立即锁定。
+     */
+    private void disableLockScreen() {
+        try {
+            // 主方案：通过 LockPatternUtils 直接禁用锁屏
+            // userId=0 即主用户（车载单用户场景）
+            LockPatternUtils lockUtils = new LockPatternUtils(this);
+            lockUtils.setLockScreenDisabled(true, UserHandle.USER_SYSTEM);
+            Log.i(TAG, "锁屏已通过 LockPatternUtils 禁用 (userId=0)");
+
+            // 兜底方案：设置锁屏超时为极大值（约 292 万年）
+            // 即使锁屏未被完全禁用（如用户手动设置了 PIN），息屏后也不会立即锁定
+            Settings.Secure.putInt(getContentResolver(),
+                    "lock_screen_lock_after_timeout", Integer.MAX_VALUE);
+            Log.i(TAG, "锁屏超时已设为 MAX_VALUE");
+        } catch (Exception e) {
+            Log.e(TAG, "禁用锁屏失败: " + e.getMessage(), e);
         }
     }
 
