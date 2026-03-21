@@ -221,6 +221,12 @@ public class AutoPilotService extends Service {
             Settings.Global.putInt(getContentResolver(),
                     Settings.Global.ADB_ENABLED, 1);
 
+            // 车载横屏：关闭自动旋转，锁定为横屏方向（user_rotation=1 对应 ROTATION_90）
+            Settings.System.putInt(getContentResolver(),
+                    Settings.System.ACCELEROMETER_ROTATION, 0);
+            Settings.System.putInt(getContentResolver(),
+                    Settings.System.USER_ROTATION, 1);
+
             // 禁用锁屏（车载场景：开机直达桌面，息屏后唤醒也不出锁屏）
             // 通过 LockPatternUtils.setLockScreenDisabled(true, userId) 将 DISABLE_LOCKSCREEN_KEY
             // 写入 LockSettings 数据库。KeyguardViewMediator 检测到此标志后跳过锁屏展示。
@@ -228,7 +234,7 @@ public class AutoPilotService extends Service {
             // 框架层已通过 config_disableLockscreenByDefault overlay 设置默认值，此处为代码层兜底。
             disableLockScreen();
 
-            Log.i(TAG, "车载本地化配置完成: 24小时制, 简体中文, ADB已启用, 锁屏已禁用");
+            Log.i(TAG, "车载本地化配置完成: 24小时制, 简体中文, ADB已启用, 横屏锁定, 锁屏已禁用");
         } catch (Exception e) {
             Log.e(TAG, "本地化配置失败: " + e.getMessage(), e);
         }
