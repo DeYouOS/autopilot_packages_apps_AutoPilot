@@ -221,11 +221,11 @@ public class AutoPilotService extends Service {
             Settings.Global.putInt(getContentResolver(),
                     Settings.Global.ADB_ENABLED, 1);
 
-            // 车载横屏：关闭自动旋转，锁定为横屏方向（user_rotation=1 对应 ROTATION_90）
+            // 车载竖屏：关闭自动旋转，锁定为竖屏方向（user_rotation=0 对应 ROTATION_0）
             Settings.System.putInt(getContentResolver(),
                     Settings.System.ACCELEROMETER_ROTATION, 0);
             Settings.System.putInt(getContentResolver(),
-                    Settings.System.USER_ROTATION, 1);
+                    Settings.System.USER_ROTATION, 0);
 
             // 禁用锁屏（车载场景：开机直达桌面，息屏后唤醒也不出锁屏）
             // 通过 LockPatternUtils.setLockScreenDisabled(true, userId) 将 DISABLE_LOCKSCREEN_KEY
