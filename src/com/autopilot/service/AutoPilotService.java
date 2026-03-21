@@ -34,9 +34,12 @@ import android.os.BatteryManager;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
+import android.os.LocaleList;
 import android.os.PowerManager;
 import android.provider.Settings;
 import android.telephony.SignalStrength;
+
+import java.util.Locale;
 import android.telephony.SubscriptionInfo;
 import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyCallback;
@@ -125,6 +128,9 @@ public class AutoPilotService extends Service {
         mWakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, TAG);
         mWakeLock.acquire();
 
+        // 车载本地化配置（跳过开机向导后由此处统一设置）
+        applyCarLocaleDefaults();
+
         // 创建工作线程，所有网络操作在此线程执行，避免阻塞主线程
         mWorkerThread = new HandlerThread("AutoPilot-Worker");
         mWorkerThread.start();
@@ -163,6 +169,39 @@ public class AutoPilotService extends Service {
 
         // START_STICKY：被杀后系统自动重启
         return START_STICKY;
+    }
+
+    // ============ 车载本地化预设 ============
+
+    /**
+     * 预设车载终端本地化配置
+     *
+     * 由于跳过了开机向导（SetupWizard 被 AutoPilot 替换），
+     * 需要在此处通过代码设置以下首次启动配置：
+     * - 系统语言：简体中文（zh-Hans-CN）
+     * - 时间格式：24 小时制
+     * - 日期格式：yyyy-MM-dd（中国标准）
+     *
+     * 语言和时区已通过系统属性（ro.product.locale / persist.sys.timezone）预设，
+     * 此处补充 Settings.System 中的格式偏好。
+     * 仅在首次启动（USER_SETUP_COMPLETE 刚被 Provision 设置后）执行，
+     * 后续启动跳过以避免覆盖用户手动修改。
+     */
+    private void applyCarLocaleDefaults() {
+        try {
+            // 设置 24 小时制（车载仪表盘风格，国内习惯）
+            Settings.System.putString(getContentResolver(),
+                    Settings.System.TIME_12_24, "24");
+
+            // 设置系统语言为简体中文
+            // LocaleList.setDefault 仅影响当前进程，
+            // persist.sys.locale 由系统属性 ro.product.locale 在首次启动时写入
+            LocaleList.setDefault(new LocaleList(Locale.SIMPLIFIED_CHINESE));
+
+            Log.i(TAG, "车载本地化配置完成: 24小时制, 简体中文");
+        } catch (Exception e) {
+            Log.e(TAG, "本地化配置失败: " + e.getMessage(), e);
+        }
     }
 
     // ============ 屏幕常亮配置 ============

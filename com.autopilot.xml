@@ -15,5 +15,9 @@
         <permission name="android.permission.WRITE_SECURE_SETTINGS" />
         <!-- 内部网络状态管理 -->
         <permission name="android.permission.CHANGE_NETWORK_STATE" />
+        <!-- 设备配置流程调度（替代 AOSP Provision） -->
+        <permission name="android.permission.DISPATCH_PROVISIONING_MESSAGE" />
+        <!-- 配置失败时恢复出厂（安全兜底，正常不会触发） -->
+        <permission name="android.permission.MASTER_CLEAR" />
     </privapp-permissions>
 </permissions>

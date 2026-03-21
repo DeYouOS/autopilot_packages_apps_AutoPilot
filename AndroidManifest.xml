@@ -35,11 +35,35 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
+    <!-- 设备配置完成所需权限（替代 AOSP Provision） -->
+    <uses-permission android:name="android.permission.DISPATCH_PROVISIONING_MESSAGE" />
+    <uses-permission android:name="android.permission.MASTER_CLEAR" />
+
     <application
         android:label="@string/app_name"
         android:persistent="true"
         android:directBootAware="true"
         android:defaultToDeviceProtectedStorage="true">
+
+        <!--
+            静默设备配置 Activity
+            替代 AOSP Provision / LineageSetupWizard
+            首次启动时自动设置 device_provisioned=1，然后禁用自身
+            priority=1 确保优先于其他 HOME activity 被系统选中
+        -->
+        <activity
+            android:name=".ProvisionActivity"
+            android:excludeFromRecents="true"
+            android:directBootAware="true"
+            android:exported="true"
+            android:theme="@android:style/Theme.NoDisplay">
+            <intent-filter android:priority="1">
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.HOME" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.SETUP_WIZARD" />
+            </intent-filter>
+        </activity>
 
         <!-- 开机广播接收器：启动核心服务 -->
         <receiver

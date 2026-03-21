@@ -24,6 +24,11 @@ android_app {
     system_ext_specific: true,
     privileged: true,
 
+    // 替换 LineageOS 开机向导和 AOSP Provision
+    // 车载场景无需向导：语言/时区由系统属性预设，AutoPilot 内置 ProvisionActivity
+    // 负责静默设置 device_provisioned=1 + user_setup_complete=1，开机直进桌面
+    overrides: ["LineageSetupWizard", "Provision"],
+
     // 特权应用白名单文件
     privapp_allowlist: "com.autopilot.xml",
 
