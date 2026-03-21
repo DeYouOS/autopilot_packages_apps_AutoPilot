@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    AutoPilot 特权应用白名单
+    声明本应用被允许使用的系统级特权权限
+-->
+<permissions>
+    <privapp-permissions package="com.autopilot">
+        <!-- 控制 WiFi 热点的开关 -->
+        <permission name="android.permission.TETHER_PRIVILEGED" />
+        <!-- 切换数据 SIM 卡 -->
+        <permission name="android.permission.MODIFY_PHONE_STATE" />
+        <!-- 读取信号强度和详细电话状态 -->
+        <permission name="android.permission.READ_PRIVILEGED_PHONE_STATE" />
+        <!-- 修改安全设置（ADB 端口等） -->
+        <permission name="android.permission.WRITE_SECURE_SETTINGS" />
+        <!-- 内部网络状态管理 -->
+        <permission name="android.permission.CHANGE_NETWORK_STATE" />
+    </privapp-permissions>
+</permissions>

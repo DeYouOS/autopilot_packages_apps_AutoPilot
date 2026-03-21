@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">AutoPilot</string>
+    <string name="notification_channel_name">AutoPilot 车载服务</string>
+    <string name="notification_channel_desc">车载热点和网络管理服务</string>
+    <string name="notification_title">AutoPilot 运行中</string>
+    <string name="notification_text_hotspot">热点已启动</string>
+    <string name="notification_text_switching">正在切换数据 SIM…</string>
+    <string name="notification_text_sim">当前数据: SIM %1$d | 信号: %2$d dBm</string>
+</resources>

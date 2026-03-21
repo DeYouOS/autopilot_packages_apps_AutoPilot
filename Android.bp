@@ -1,0 +1,37 @@
+/*
+ * AutoPilot — 车载智能终端核心服务
+ *
+ * 功能：
+ * 1. 开机自动启动 WiFi 热点（基于 TetheringManager）
+ * 2. 双卡信号智能切换（基于 SubscriptionManager + TelephonyCallback）
+ *
+ * 作为特权系统应用安装到 /system_ext/priv-app/，
+ * 使用 platform 签名以获得系统级权限。
+ */
+android_app {
+    name: "AutoPilot",
+
+    srcs: ["src/**/*.java"],
+    resource_dirs: ["res"],
+
+    manifest: "AndroidManifest.xml",
+
+    // 使用 platform 签名，获得系统级权限
+    platform_apis: true,
+    certificate: "platform",
+
+    // 安装到 system_ext 分区的 priv-app 目录
+    system_ext_specific: true,
+    privileged: true,
+
+    // 特权应用白名单文件
+    privapp_allowlist: "com.autopilot.xml",
+
+    optimize: {
+        enabled: false,
+    },
+
+    static_libs: [
+        "androidx.annotation_annotation",
+    ],
+}

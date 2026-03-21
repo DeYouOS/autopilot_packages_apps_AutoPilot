@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    AutoPilot — 车载智能终端核心服务
+
+    作为特权系统应用运行，需要以下系统级权限：
+    - TETHER_PRIVILEGED: 控制 WiFi 热点开关
+    - MODIFY_PHONE_STATE: 切换数据 SIM 卡
+    - READ_PRIVILEGED_PHONE_STATE: 读取信号强度和 SIM 状态
+    - RECEIVE_BOOT_COMPLETED: 开机自启动
+    - WRITE_SECURE_SETTINGS: 修改系统安全设置（如 ADB 端口）
+    - CHANGE_WIFI_STATE: 配置 WiFi 热点参数
+    - CONNECTIVITY_INTERNAL: 内部网络连接管理
+    - ACCESS_FINE_LOCATION: GPS 定位（双卡信号评估辅助）
+    - INTERNET: 网络连通性探测（ping 测试）
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.autopilot"
+    android:sharedUserId="android.uid.system">
+
+    <!-- 核心权限 -->
+    <uses-permission android:name="android.permission.TETHER_PRIVILEGED" />
+    <uses-permission android:name="android.permission.MODIFY_PHONE_STATE" />
+    <uses-permission android:name="android.permission.READ_PRIVILEGED_PHONE_STATE" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" />
+    <uses-permission android:name="android.permission.WRITE_SETTINGS" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+    <application
+        android:label="@string/app_name"
+        android:persistent="true"
+        android:directBootAware="true"
+        android:defaultToDeviceProtectedStorage="true">
+
+        <!-- 开机广播接收器：启动核心服务 -->
+        <receiver
+            android:name=".receiver.BootReceiver"
+            android:exported="true"
+            android:directBootAware="true">
+            <intent-filter android:priority="1000">
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+
+        <!-- 核心前台服务：管理热点和双卡切换 -->
+        <service
+            android:name=".service.AutoPilotService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="car_hotspot_management" />
+        </service>
+
+    </application>
+</manifest>
